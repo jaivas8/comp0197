@@ -2,6 +2,10 @@
 
 This repository contains code for finetuning and pretraining models.
 
+## Environment
+
+This code uses the default environment provided by `conda create -n comp0197-cw1-pt -c pytorch python=3.12 pytorch=2.2 torchvision=0.17` with no additional packages.
+
 <!-- ## Prerequisites
 
 - Python 3.x
@@ -21,51 +25,90 @@ This repository contains code for finetuning and pretraining models.
     ```shell
     pip install -r requirements.txt
     ``` -->
-
+# Instructions
 ## Pretraining
 
-To pretrain the models, follow these steps:
+To pretrain the U-Net model you can run `python pretrain.py`. The Coco dataset must be downloaded manually with the raw image files in a directory called `./coco_dataset/raw`. The following parameters are also available:
 
-1. Prepare the coco dataset and save it as `./coco_dataset/raw` in the main directory
+```shell
+usage: pretrain.py [-h] [-lc LOAD_CHECKPOINT] [-m {grid,pixel,random_erasing}] [-mr {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9}] [-p PATIENCE] [-b BATCH_SIZE] [-dir SAVE_DIRECTORY]
 
-2. Run the pretraining script:
+options:
+  -h, --help            show this help message and exit
+  -lc LOAD_CHECKPOINT, --load-checkpoint LOAD_CHECKPOINT
+                        Load checkpoint
+  -m {grid,pixel,random_erasing}, --mask-method {grid,pixel,random_erasing}
+                        Masking method to use
+  -mr {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9}, --mask-ratio {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9}
+                        Masking ratio
+  -p PATIENCE, --patience PATIENCE
+                        Patience for early stopping
+  -b BATCH_SIZE, --batch-size BATCH_SIZE
+                        Batch size for training
+  -dir SAVE_DIRECTORY, --save_directory SAVE_DIRECTORY
+```
 
-    ```shell
-    python pretrain.py --mask grid --masking-ratio 0.2 --directory `saved_models/pretrain/`
-    ```
+To pretrain the contrastive learning model you can run `python contrastive_learn_pretrain.py`. The Coco dataset must be downloaded manually with the raw image files in a directory called `./coco_dataset/raw`. The following parameters are also available:
+```shell
+usage: contrastive_learn_pretrain.py [-h] [-b BATCH_SIZE] [-lc LOAD_CHECKPOINT]
 
-    flags:
-    - --mask : the masking method for the pretrained model (only works if pretrain is true)
-    - --masking-ratio : the ratio of the pretrainined model ((only works if pretrain is true))
-    - --directory : The location of the saved directory
-    - --load-checkpoint : Load a saved pretrained model for further training 
-        - (looks in --directory for the folder and takes the last epoch)
-
+options:
+  -h, --help            show this help message and exit
+  -b BATCH_SIZE, --batch-size BATCH_SIZE
+                        Batch size for training
+  -lc LOAD_CHECKPOINT, --load-checkpoint LOAD_CHECKPOINT
+                        Load checkpoint
+```
 ## Finetuning
 
-To finetune the model, follow these steps:
+To finetune the model U-Net model from scratch you can run `python finetune.py`. The Oxford-IIIT Pets Dataset wil be automatically downloaded with this command. The following parameters are also available if you wish to finetune a pretrained model:
 
-1. Download the pre-trained model weights.
+```shell
+usage: finetune.py [-h] [-m {grid,pixel,random_erasing}] [-mr {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9}] [-pt | --pretrain | --no-pretrain] [-p PATIENCE]
+                   [-s {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}] [-b BATCH_SIZE] [-lc LOAD_CHECKPOINT]
 
-2. Prepare your dataset in the required format.
+options:
+  -h, --help            show this help message and exit
+  -m {grid,pixel,random_erasing}, --mask-method {grid,pixel,random_erasing}
+                        Masking method to use
+  -mr {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9}, --mask-ratio {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9}
+                        Masking ratio
+  -pt, --pretrain, --no-pretrain
+                        Use pretrained model
+  -p PATIENCE, --patience PATIENCE
+                        Patience for early stopping
+  -s {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}, --dataset-size {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}
+                        Fine-tuning dataset size ratio
+  -b BATCH_SIZE, --batch-size BATCH_SIZE
+                        Batch size for training
+  -lc LOAD_CHECKPOINT, --load-checkpoint LOAD_CHECKPOINT
+                        Load checkpoint
+```
 
-3. Run the finetuning script:
+To finetune the model contrastive learning model you can run `python contrastive_learn_finetune.py` with the following parameters:
+```shell
+usage: contrastive_learn_finetune.py [-h] [-pt | --pretrain | --no-pretrain] [-p PATIENCE] [-s {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}] [-b BATCH_SIZE] [-lc LOAD_CHECKPOINT]
 
-    ```shell
-    python finetune.py < /path/to/output_logs.txt
-    ```
-    flags:
-    - --pretrain : to set pretraining to true
-    - --mask : the masking method for the pretrained model (only works if pretrain is true)
-    - --masking-ratio : the ratio of the pretrainined model ((only works if pretrain is true))
-    - --patience : The amount of none improvements epochs before the training is stopped 
+options:
+  -h, --help            show this help message and exit
+  -pt, --pretrain, --no-pretrain
+                        Use pretrained model
+  -p PATIENCE, --patience PATIENCE
+                        Patience for early stopping
+  -s {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}, --dataset-size {0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0}
+                        Fine-tuning dataset size ratio
+  -b BATCH_SIZE, --batch-size BATCH_SIZE
+                        Batch size for training
+  -lc LOAD_CHECKPOINT, --load-checkpoint LOAD_CHECKPOINT
+                        Load checkpoint
+```
 
-    Replace `/path/to/output_logs.txt` with the path to where the training logs should be outputted
 
-## Contributing
 
-Contributions are welcome! Please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).
+<!-- ## Contributing
 
+Contributions are welcome! Please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md). -->
+<!-- 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE). -->

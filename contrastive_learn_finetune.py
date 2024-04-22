@@ -61,6 +61,7 @@ args = parser.parse_args()
 
 PRETRAIN = args.pretrain
 SAMPLE_SIZE = args.dataset_size
+SAMPLE_SIZE = 0.05
 PRETRAIN_CHECKPOINT = args.load_checkpoint
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

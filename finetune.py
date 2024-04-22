@@ -65,8 +65,9 @@ generator1 = torch.Generator().manual_seed(16)
 training_data, validation_data = random_split(
     trainval_data, [0.9, 0.1], generator1)
 
-training_data, _ = random_split(
-    training_data, [TRAIN_DATA_SIZE, 1-TRAIN_DATA_SIZE], generator1)
+if TRAIN_DATA_SIZE < 1.0:
+    training_data, _ = random_split(
+        training_data, [TRAIN_DATA_SIZE, 1-TRAIN_DATA_SIZE], generator1)
 
 pin_memory = torch.cuda.is_available()
 pin_memory_device = device.type if pin_memory else ""
@@ -107,7 +108,7 @@ if PRETRAIN:
 
     MODEL_DIR = f"saved_models/finetune/{MASK_METHOD}_{int(MASK_RATIO*100)}"
 else:
-    MODEL_DIR = f"finetune_final_results/baseline/"
+    MODEL_DIR = f"saved_models/finetune/baseline"
 
 os.makedirs(MODEL_DIR, exist_ok=True)
 model = model.to(device)

@@ -72,11 +72,14 @@ val_dataset = CocoImages(image_root=COCO_ROOT,
                          transform=standard_transform, split="val")
 val_dg = CocoDataGen(phase='val', dataset=val_dataset)
 
+
+pin_memory = torch.cuda.is_available()
+pin_memory_device = device.type if pin_memory else ""
 # Create data loaders
-train_loader = DataLoader(train_dg, batch_size=128, shuffle=True,
-                          num_workers=4, pin_memory=True, pin_memory_device=device.type)
-val_loader = DataLoader(val_dg, batch_size=128, shuffle=True,
-                        num_workers=4, pin_memory=True, pin_memory_device=device.type)
+train_loader = DataLoader(train_dg, batch_size=args.batch_size, shuffle=True,
+                          num_workers=4, pin_memory=pin_memory, pin_memory_device=pin_memory_device)
+val_loader = DataLoader(val_dg, batch_size=args.batch_size, shuffle=True,
+                        num_workers=4, pin_memory=pin_memory, pin_memory_device=pin_memory_device)
 
 
 model = UNetContrastive(n_channels=3, embedding_dim=256)

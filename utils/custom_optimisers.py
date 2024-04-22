@@ -1,10 +1,10 @@
 import torch
-from torch.optim import Optimizer, required
+from torch.optim.optimizer import Optimizer, required
 import re
 
 EETA_DEFAULT = 0.001
 
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class LARS(Optimizer):
     """
     Layer-wise Adaptive Rate Scaling for large batch training.
@@ -108,7 +108,7 @@ class LARS(Optimizer):
                     w_norm = torch.norm(param)
                     g_norm = torch.norm(grad)
 
-                    device = g_norm.get_device()
+                    # device = g_norm.get_device()
                     trust_ratio = torch.where(
                         w_norm.gt(0),
                         torch.where(
