@@ -1,14 +1,14 @@
-# Finetune and Pretrain
+# COMP0197 Group Coursework Code
 
 This repository contains code for finetuning and pretraining models.
 
-## Prerequisites
+<!-- ## Prerequisites
 
 - Python 3.x
 - [PyTorch](https://pytorch.org/) (version X.X.X)
-- [Transformers](https://huggingface.co/transformers/) (version X.X.X)
+- [Transformers](https://huggingface.co/transformers/) (version X.X.X) -->
 
-## Installation
+<!-- ## Installation
 
 1. Clone the repository:
 
@@ -20,7 +20,26 @@ This repository contains code for finetuning and pretraining models.
 
     ```shell
     pip install -r requirements.txt
+    ``` -->
+
+## Pretraining
+
+To pretrain the model, follow these steps:
+
+1. Prepare the coco dataset and save it as `./coco_dataset/raw` in the main directory
+
+2. Run the pretraining script:
+
+    ```shell
+    python pretrain.py --mask grid --masking-ratio 0.2 --directory `saved_models/pretrain/`
     ```
+
+    flags:
+    - --mask : the masking method for the pretrained model (only works if pretrain is true)
+    - --masking-ratio : the ratio of the pretrainined model ((only works if pretrain is true))
+    - --directory : The location of the saved directory
+    - --load-checkpoint : Load a saved pretrained model for further training 
+        - (looks in --directory for the folder and takes the last epoch)
 
 ## Finetuning
 
@@ -43,24 +62,6 @@ To finetune the model, follow these steps:
 
     Replace `/path/to/output_logs.txt` with the path to where the training logs should be outputted
 
-## Pretraining
-
-To pretrain the model, follow these steps:
-
-1. Prepare the coco dataset and save it as `./coco_dataset/raw` in the main directory
-
-2. Run the pretraining script:
-
-    ```shell
-    python pretrain.py --mask grid --masking-ratio 0.2 --directory `saved_models/pretrain/`
-    ```
-
-    flags:
-    - --mask : the masking method for the pretrained model (only works if pretrain is true)
-    - --masking-ratio : the ratio of the pretrainined model ((only works if pretrain is true))
-    - --directory : The location of the saved directory
-    - --load-checkpoint : Load a saved pretrained model for further training 
-        - (looks in --directory for the folder and takes the last epoch)
 ## Contributing
 
 Contributions are welcome! Please follow the guidelines in [CONTRIBUTING.md](CONTRIBUTING.md).

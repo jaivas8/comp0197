@@ -9,26 +9,32 @@ import os
 
 masking_enum = ["grid", "pixel", "random_erasing"]
 parser = argparse.ArgumentParser()
-parser.add_argument("-m", "--mask-method", type=str, choices=masking_enum,
-                    required=True, help="Masking method to use")
-parser.add_argument("-mr", "--mask-ratio", type=float, required=True,
-                    choices=[n/10 for n in range(1, 10)], help="Masking ratio")
 parser.add_argument("-lc", "--load-checkpoint", type=int,
                     default=None, help="Load checkpoint")
-parser.add_argument("-p", "--patience", type=int, default=10, help="Patience for early stopping")
-parser.add_argument('-dir', "--save_directory", required=True, type=str)
+parser.add_argument("-m", "--mask-method", type=str, choices=masking_enum,
+                    default=masking_enum[0], help="Masking method to use")
+parser.add_argument("-mr", "--mask-ratio", type=float, default=0.6,
+                    choices=[n/10 for n in range(1, 10)], help="Masking ratio")
+parser.add_argument("-p", "--patience", type=int, default=10,
+                    help="Patience for early stopping")
+parser.add_argument("-b", "--batch-size", type=int, default=4,
+                    help="Batch size for training")
+parser.add_argument('-dir', "--save_directory", required=False,
+                    type=str, default="saved_models/pretrain")
 args = parser.parse_args()
 
 
 MASK_METHOD = args.mask_method
 MASK_RATIO = args.mask_ratio
+BATCH_SIZE = args.batch_size
 
 # MODEL_DIR = f"saved_models/pretrain/{MASK_METHOD}_{int(MASK_RATIO*100)}"
-MODEL_DIR = os.path.join(args.save_directory, f"{MASK_METHOD}_{int(MASK_RATIO*100)}")
+MODEL_DIR = os.path.join(
+    args.save_directory, f"{MASK_METHOD}_{int(MASK_RATIO*100)}")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.cuda.is_available():   
+if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True
 
 
@@ -40,18 +46,18 @@ transform = torchvision.transforms.Compose([
 
 COCO_ROOT = "./coco_dataset/raw"
 
-pin_memory = torch.cuda.is_available()  
+pin_memory = torch.cuda.is_available()
 pin_memory_device = device.type if pin_memory else ""
 
 trainset = CocoImages(
     image_root=COCO_ROOT, transform=transform)
-trainloader = DataLoader(trainset, batch_size=32, shuffle=True,
+trainloader = DataLoader(trainset, batch_size=BATCH_SIZE, shuffle=True,
                          num_workers=4, pin_memory_device=pin_memory_device, pin_memory=pin_memory)
 
 validationset = CocoImages(
     image_root=COCO_ROOT, transform=transform, split="val")
 validationloader = DataLoader(
-    validationset, batch_size=32, shuffle=True, num_workers=4, pin_memory_device=pin_memory_device, pin_memory=pin_memory)
+    validationset, batch_size=BATCH_SIZE, shuffle=True, num_workers=4, pin_memory_device=pin_memory_device, pin_memory=pin_memory)
 
 
 if args.load_checkpoint:
@@ -66,7 +72,6 @@ if args.load_checkpoint:
     start_epoch = args.load_checkpoint
 else:
     model = UNet(3, 3).to(device)
-   
     start_epoch = 0
 
 optimiser = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -109,5 +114,6 @@ for i in range(start_epoch, MAX_EPOCHS):
         no_improvement += 1
 
     if no_improvement == patience:
-        print(f"Stopping training at {i+1} epochs -> no improvement in test loss in {patience} epochs")
+        print(
+            f"Stopping training at {i+1} epochs -> no improvement in test loss in {patience} epochs")
         break
