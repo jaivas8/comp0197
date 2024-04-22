@@ -32,10 +32,12 @@ seed_value=16
 random.seed(seed_value)
 np.random.seed(seed_value)
 torch.manual_seed(seed_value)
-torch.cuda.manual_seed(seed_value)
-torch.cuda.manual_seed_all(seed_value)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
+availability = torch.cuda.is_available()
+if availability:
+    torch.cuda.manual_seed(seed_value)
+    torch.cuda.manual_seed_all(seed_value)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-pt", "--pretrain",
@@ -61,7 +63,7 @@ SAMPLE_SIZE = args.sample_size
 PRETRAIN_CHECKPOINT = args.pretrain_checkpoint
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.backends.cudnn.benchmark = True
+
 
 transform = torchvision.transforms.Compose([
     torchvision.transforms.ToTensor(),
@@ -76,6 +78,8 @@ target_transform = torchvision.transforms.Compose([
 trainval_data = torchvision.datasets.OxfordIIITPet(
     download=True, root="./pet_dataset", transform=transform, target_transform=target_transform, target_types="segmentation")
 
+pin_memory = torch.cuda.is_available()
+pin_memory_device = device.type if pin_memory else ""
 if SAMPLE_SIZE != 1.0:
     total_size = len(trainval_data)
     subset_size = int(total_size * SAMPLE_SIZE)
@@ -89,15 +93,15 @@ else:
     generator1 = torch.Generator().manual_seed(16)
     training_data, validation_data = random_split(trainval_data, [0.9, 0.1], generator1)
 
-trainloader = DataLoader(training_data, batch_size=64,
-                         shuffle=True, pin_memory=True, num_workers=4, pin_memory_device=device.type)
+trainloader = DataLoader(training_data, batch_size=4,
+                         shuffle=True, pin_memory=pin_memory, num_workers=4, pin_memory_device=pin_memory_device)
 
-valloader = DataLoader(validation_data, batch_size=64,
-                       shuffle=True, pin_memory=True, num_workers=4, pin_memory_device=device.type)
+valloader = DataLoader(validation_data, batch_size=4,
+                       shuffle=True, pin_memory=pin_memory, num_workers=4, pin_memory_device=pin_memory_device)
 
 testing_data = torchvision.datasets.OxfordIIITPet(
     download=True, root="./pet_dataset", transform=transform, target_transform=target_transform, target_types="segmentation", split="test")
-testloader = DataLoader(testing_data, batch_size=64,
+testloader = DataLoader(testing_data, batch_size=4,
                         shuffle=True, pin_memory=True, num_workers=4, pin_memory_device=device.type)
 
 
