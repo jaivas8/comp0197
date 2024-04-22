@@ -33,6 +33,8 @@ parser.add_argument("-s", "--dataset-size", type=float, default=1.0, choices=[n/
                     help="Fine-tuning dataset size ratio")
 parser.add_argument("-b", "--batch-size", type=int, default=4,
                     help="Batch size for training")
+parser.add_argument("-lc", "--load-checkpoint", type=int,
+                    default=None, help="Load checkpoint")
 args = parser.parse_args()
 
 MASK_METHOD = args.mask_method
@@ -84,14 +86,19 @@ testloader = DataLoader(testing_data, batch_size=BATCH_SIZE,
 model = UNet(3, 3)
 print("Pretraining:  ", PRETRAIN)
 if PRETRAIN:
-    pretrain_dir = f"saved_models/pretrain/{MASK_METHOD}_{int(MASK_RATIO*100)}"
-    last_model_path = ""
-    for (dirpath, dirnames, filenames) in os.walk(pretrain_dir):
-        checkpoints = [int(s.split("_")[0])
-                       for s in filenames if s.endswith(".pt")]
-        latest = max(checkpoints)
-        last_model_path = os.path.join(pretrain_dir, f"{latest}_epochs.pt")
-    model.load_state_dict(torch.load(last_model_path))
+    if args.load_checkpoint:
+        last_model_path = f"saved_models/pretrain/{MASK_METHOD}_{int(MASK_RATIO*100)}/{args.load_checkpoint}_epochs.pt"
+        model.load_state_dict(torch.load(
+            last_model_path))
+    else:
+        pretrain_dir = f"saved_models/pretrain/{MASK_METHOD}_{int(MASK_RATIO*100)}"
+        last_model_path = ""
+        for (dirpath, dirnames, filenames) in os.walk(pretrain_dir):
+            checkpoints = [int(s.split("_")[0])
+                           for s in filenames if s.endswith(".pt")]
+            latest = max(checkpoints)
+            last_model_path = os.path.join(pretrain_dir, f"{latest}_epochs.pt")
+        model.load_state_dict(torch.load(last_model_path))
     model.reinit_up()
 
     print("Masking method: ", MASK_METHOD)

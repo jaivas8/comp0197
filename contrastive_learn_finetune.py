@@ -8,6 +8,7 @@ import os
 import numpy as np
 import random
 
+
 def load_model_with_filtered_state_dict(model, checkpoint_path, exclude_layers):
     # Load the full state dict from the checkpoint
     checkpoint = torch.load(checkpoint_path)
@@ -16,7 +17,8 @@ def load_model_with_filtered_state_dict(model, checkpoint_path, exclude_layers):
     model_state_dict = model.state_dict()
 
     # Filter out layers from the loaded checkpoint state dict
-    filtered_checkpoint = {k: v for k, v in checkpoint.items() if k in model_state_dict and model_state_dict[k].size() == v.size()}
+    filtered_checkpoint = {k: v for k, v in checkpoint.items(
+    ) if k in model_state_dict and model_state_dict[k].size() == v.size()}
 
     # Optionally, specifically exclude certain layers
     for layer in exclude_layers:
@@ -28,7 +30,8 @@ def load_model_with_filtered_state_dict(model, checkpoint_path, exclude_layers):
 
     return model
 
-seed_value=16
+
+seed_value = 16
 random.seed(seed_value)
 np.random.seed(seed_value)
 torch.manual_seed(seed_value)
@@ -40,27 +43,25 @@ if availability:
     torch.backends.cudnn.benchmark = True
 
 parser = argparse.ArgumentParser()
+
 parser.add_argument("-pt", "--pretrain",
-                    action=argparse.BooleanOptionalAction, default=False)
-parser.add_argument("-p", "--patience", type=int, default=5,
+                    action=argparse.BooleanOptionalAction, default=False, help="Use pretrained model")
+parser.add_argument("-p", "--patience", type=int, default=10,
                     help="Patience for early stopping")
-parser.add_argument("-s", "--sample-size", type=float, default=1.0,
-                    help="Fraction of the trainval dataset to use (between 0 and 1)")
-parser.add_argument("-c", "--pretrain-checkpoint", type=int, default=1,
-                    help="Pretraining checkpoint to load")
+parser.add_argument("-s", "--dataset-size", type=float, default=1.0, choices=[n/10 for n in range(1, 11)],
+                    help="Fine-tuning dataset size ratio")
+parser.add_argument("-b", "--batch-size", type=int, default=4,
+                    help="Batch size for training")
+parser.add_argument("-lc", "--load-checkpoint", type=int,
+                    default=None, help="Load checkpoint")
+
 args = parser.parse_args()
-
-# s = 0.2, 0.4, 0.6, 0.8, 1
-# c = best checkpoint
-# -pt
-
-# 60: 0.77734
 
 
 
 PRETRAIN = args.pretrain
-SAMPLE_SIZE = args.sample_size
-PRETRAIN_CHECKPOINT = args.pretrain_checkpoint
+SAMPLE_SIZE = args.dataset_size
+PRETRAIN_CHECKPOINT = args.load_checkpoint
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -86,12 +87,15 @@ if SAMPLE_SIZE != 1.0:
     discard_size = total_size - subset_size
 
     generator1 = torch.Generator().manual_seed(16)
-    trainval_data, _ = random_split(trainval_data, [subset_size, discard_size], generator1)
+    trainval_data, _ = random_split(
+        trainval_data, [subset_size, discard_size], generator1)
     generator1 = torch.Generator().manual_seed(16)
-    training_data, validation_data = random_split(trainval_data, [0.9, 0.1], generator1)
+    training_data, validation_data = random_split(
+        trainval_data, [0.9, 0.1], generator1)
 else:
     generator1 = torch.Generator().manual_seed(16)
-    training_data, validation_data = random_split(trainval_data, [0.9, 0.1], generator1)
+    training_data, validation_data = random_split(
+        trainval_data, [0.9, 0.1], generator1)
 
 trainloader = DataLoader(training_data, batch_size=4,
                          shuffle=True, pin_memory=pin_memory, num_workers=4, pin_memory_device=pin_memory_device)
@@ -105,26 +109,25 @@ testloader = DataLoader(testing_data, batch_size=4,
                         shuffle=True, pin_memory=True, num_workers=4, pin_memory_device=device.type)
 
 
-
 model = UNet(3, 3)
 initial_weights = model.inc.double_conv[0].weight
 print("Pretraining:  ", PRETRAIN)
 if PRETRAIN:
-    pretrain_dir = f"saved_models/contrastive_learning_new/pretrain/"
+    pretrain_dir = f"saved_models/contrastive_learning/pretrain/"
     last_model_path = ""
     for (dirpath, dirnames, filenames) in os.walk(pretrain_dir):
-        last_model_path = os.path.join(pretrain_dir, f"{PRETRAIN_CHECKPOINT}_epochs.pt")
+        last_model_path = os.path.join(
+            pretrain_dir, f"{PRETRAIN_CHECKPOINT}_epochs.pt")
     exclude_layers = ['outc.conv.weight', 'outc.conv.bias']
     load_model_with_filtered_state_dict(model, last_model_path, exclude_layers)
     model.reinit_up()
-    #model.freeze_down()
+    # model.freeze_down()
 
-    
     print("Using pretrained model from:  ", last_model_path)
 
-    MODEL_DIR = f"finetune_final_results/finetune_dataset_sizes/contrastive_learning/{PRETRAIN_CHECKPOINT}_checkpoint/{str(SAMPLE_SIZE)}_size"
+    MODEL_DIR = f"saved_models/contrastive_learning/finetune/{PRETRAIN_CHECKPOINT}_checkpoint/{str(SAMPLE_SIZE)}_size"
 else:
-    MODEL_DIR = f"finetune_final_results/finetune_dataset_sizes/contrastive_learning/baseline/{str(SAMPLE_SIZE)}_size"
+    MODEL_DIR = f"saved_models/contrastive_learning/finetune/baseline/{str(SAMPLE_SIZE)}_size"
 
 os.makedirs(MODEL_DIR, exist_ok=True)
 model = model.to(device)
@@ -179,7 +182,8 @@ for i in range(MAX_EPOCHS):
         no_improvement += 1
 
     if no_improvement == patience:
-        print(f"Stopping training at {i+1} epochs -> no improvement in validation loss in {patience} epochs")
+        print(
+            f"Stopping training at {i+1} epochs -> no improvement in validation loss in {patience} epochs")
         torch.save(model.state_dict(),
-                    os.path.join(MODEL_DIR, f"{i+1}_epochs.pt"))
+                   os.path.join(MODEL_DIR, f"{i+1}_epochs.pt"))
         break

@@ -24,7 +24,7 @@ This repository contains code for finetuning and pretraining models.
 
 ## Pretraining
 
-To pretrain the model, follow these steps:
+To pretrain the models, follow these steps:
 
 1. Prepare the coco dataset and save it as `./coco_dataset/raw` in the main directory
 
