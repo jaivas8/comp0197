@@ -1,0 +1,3 @@
+pet_dataset/
+**/cache/
+**/__pycache__/
